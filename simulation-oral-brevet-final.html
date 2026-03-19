@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oral Brevet DNB — Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F5F0;--bg2:#fff;--bg3:#F0EDE6;
+  --coral:#FF6B6B;--teal:#00C9B1;--sun:#FFB930;--navy:#1A1A3E;
+  --text:#1A1A3E;--text2:#5A5A7A;--text3:#9A9AB0;
+  --border:rgba(26,26,62,0.08);--border2:rgba(26,26,62,0.15);
+  --j1bg:#FFF0F0;--j1c:#FF6B6B;--j2bg:#F0FBF9;--j2c:#00C9B1;--j3bg:#FFFBF0;--j3c:#FFB930;
+  --shadow:0 4px 24px rgba(26,26,62,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Plus Jakarta Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* SETUP */
+#setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem;position:relative;overflow:hidden}
+#setup-screen::before{content:"";position:absolute;top:-120px;right:-120px;width:400px;height:400px;background:radial-gradient(circle,rgba(0,201,177,.12) 0%,transparent 70%);pointer-events:none}
+#setup-screen::after{content:"";position:absolute;bottom:-80px;left:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(255,107,107,.10) 0%,transparent 70%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--navy);color:#fff;font-family:"Syne",sans-serif;font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:6px 14px;border-radius:100px;margin-bottom:1.5rem}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.setup-title{font-family:"Syne",sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:800;text-align:center;line-height:1.1;margin-bottom:.4rem;color:var(--navy)}
+.setup-title .c1{color:var(--coral)}.setup-title .c2{color:var(--teal)}
+.setup-sub{color:var(--text2);font-size:.9rem;text-align:center;margin-bottom:2rem;max-width:420px}
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.75rem;width:100%;max-width:520px;box-shadow:var(--shadow)}
+.field-group{margin-bottom:1.2rem}
+.field-label{font-size:.72rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;display:block}
+.field-input{width:100%;background:var(--bg3);border:1.5px solid transparent;border-radius:12px;padding:.7rem 1rem;color:var(--text);font-family:"Plus Jakarta Sans",sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;resize:none}
+.field-input:focus{border-color:var(--teal);background:#fff}
+.field-input::placeholder{color:var(--text3)}
+.hint{font-size:.7rem;color:var(--text3);margin-top:.4rem}
+
+/* grilles choix */
+.lang-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.parcours-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice-btn{background:var(--bg3);border:1.5px solid transparent;border-radius:12px;padding:.6rem .3rem;cursor:pointer;text-align:center;color:var(--text2);font-size:.78rem;font-family:"Plus Jakarta Sans",sans-serif;font-weight:500;transition:all .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.choice-btn:hover{border-color:var(--border2);background:#fff}
+.choice-btn.selected{border-color:var(--teal);color:var(--navy);background:#F0FBF9;font-weight:600}
+.choice-emoji{font-size:1.2rem;display:block;margin-bottom:3px;pointer-events:none}
+
+.start-btn{width:100%;padding:.95rem;background:var(--navy);border:none;border-radius:14px;color:#fff;font-family:"Syne",sans-serif;font-weight:700;font-size:1rem;cursor:pointer;transition:all .2s;margin-top:.5rem}
+.start-btn:hover:not(:disabled){background:#2d2d5e;transform:translateY(-2px);box-shadow:0 8px 24px rgba(26,26,62,.2)}
+.start-btn:disabled{opacity:.4;cursor:default}
+
+/* ORAL */
+#oral-screen{display:none;min-height:100vh;flex-direction:column;padding:1rem;max-width:960px;margin:0 auto;padding-bottom:1.5rem}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;background:var(--bg2);border-radius:14px;padding:.6rem 1rem;box-shadow:0 2px 8px rgba(26,26,62,.06);gap:8px}
+.top-info{font-size:.72rem;color:var(--text3);line-height:1.5}
+.top-info strong{color:var(--navy);font-weight:600}
+.lang-badge{display:inline-block;font-size:.65rem;padding:2px 9px;border-radius:100px;background:var(--navy);color:#fff;margin-left:5px;font-weight:600;vertical-align:middle}
+.timer-ring{width:52px;height:52px;position:relative;flex-shrink:0}
+.timer-ring svg{transform:rotate(-90deg)}
+.timer-ring circle{fill:none;stroke-width:4}
+.t-bg{stroke:#F0EDE6}.t-prog{stroke:var(--teal);stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .5s}
+.timer-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Syne",sans-serif;font-size:.7rem;font-weight:700;color:var(--navy)}
+
+/* JURY */
+.jury-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:.8rem}
+.jury-card{background:var(--bg2);border:2px solid transparent;border-radius:18px;overflow:hidden;transition:all .3s;box-shadow:0 2px 12px rgba(26,26,62,.06)}
+.jury-card.speaking{border-color:var(--jc);box-shadow:0 8px 28px rgba(26,26,62,.12);transform:translateY(-3px)}
+.jury-card.j0{--jbg:var(--j1bg);--jc:var(--j1c)}
+.jury-card.j1{--jbg:var(--j2bg);--jc:var(--j2c)}
+.jury-card.j2{--jbg:var(--j3bg);--jc:var(--j3c)}
+.jury-avatar-wrap{background:var(--jbg);padding:1rem .8rem .6rem;display:flex;flex-direction:column;align-items:center;position:relative}
+.jury-svg-el{width:70px;height:84px;display:block}
+.speak-dot{position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;background:var(--jc);opacity:0;transition:opacity .3s}
+.jury-card.speaking .speak-dot{opacity:1;animation:spk .8s infinite}
+@keyframes spk{0%,100%{transform:scale(1)}50%{transform:scale(1.5)}}
+.jury-card.speaking .jmouth{animation:mth .2s ease-in-out infinite alternate}
+@keyframes mth{from{ry:2}to{ry:6}}
+.jury-info{padding:.55rem .75rem .65rem}
+.jury-name{font-family:"Syne",sans-serif;font-size:.76rem;font-weight:700;color:var(--navy)}
+.jury-role{font-size:.6rem;color:var(--text3);margin-top:1px}
+.jury-wave{display:flex;gap:3px;align-items:flex-end;height:13px;margin-top:4px;opacity:0;transition:opacity .3s}
+.jury-wave.active{opacity:1}
+.jury-wave span{width:3px;border-radius:2px;animation:wv .65s ease-in-out infinite}
+.jury-wave span:nth-child(2){animation-delay:.12s}
+.jury-wave span:nth-child(3){animation-delay:.24s}
+@keyframes wv{0%,100%{height:3px}50%{height:12px}}
+
+/* PHASE */
+.phase-banner{background:var(--bg2);border-left:4px solid var(--teal);border-radius:0 12px 12px 0;padding:.5rem .9rem;font-size:.79rem;color:var(--navy);font-weight:500;margin-bottom:.7rem;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(26,26,62,.05)}
+.detect-banner{background:#F0FBF9;border-left:4px solid var(--teal);border-radius:0 12px 12px 0;padding:.5rem .9rem;font-size:.76rem;color:#007A6C;font-weight:500;margin-bottom:.7rem;display:none;align-items:center;gap:8px}
+.detect-banner.show{display:flex}
+
+/* TRANSCRIPT */
+.transcript-area{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:.9rem;flex:1;min-height:150px;max-height:220px;overflow-y:auto;margin-bottom:.8rem;display:flex;flex-direction:column;gap:.65rem;-webkit-overflow-scrolling:touch}
+.msg{display:flex;gap:9px;align-items:flex-start;animation:fdup .3s ease}
+@keyframes fdup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.msg.user .msg-who{text-align:right}
+.av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;margin-top:2px}
+.bwrap{flex:1;min-width:0}
+.msg-who{font-size:.66rem;font-weight:600;margin-bottom:3px;color:var(--text3)}
+.bubble{display:inline-block;padding:.5rem .8rem;font-size:.83rem;line-height:1.5;max-width:95%;word-wrap:break-word}
+.jbubble{background:var(--bg3);color:var(--navy);border-radius:0 12px 12px 12px}
+.ububble{background:var(--navy);color:#fff;border-radius:12px 0 12px 12px}
+
+/* CONTROLS */
+.controls{display:flex;flex-direction:column;gap:.6rem}
+.ctrl-top{display:flex;gap:.75rem;align-items:center;background:var(--bg2);border-radius:16px;padding:.7rem .9rem;box-shadow:0 2px 8px rgba(26,26,62,.06)}
+.mic-btn{width:54px;height:54px;border-radius:50%;border:none;background:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;transition:all .2s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mic-btn:hover{background:#2d2d5e;transform:scale(1.05)}
+.mic-btn.rec{background:var(--coral);animation:mp 1s infinite}
+@keyframes mp{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,.4)}50%{box-shadow:0 0 0 10px rgba(255,107,107,0)}}
+.mic-status{flex:1}
+.mic-label{font-size:.82rem;font-weight:500;color:var(--navy)}
+.mic-sub{font-size:.69rem;color:var(--text3);margin-top:2px;min-height:1em;font-style:italic}
+.ctrl-bottom{display:flex;gap:.6rem}
+.abtn{flex:1;padding:.68rem .9rem;background:var(--bg2);border:1.5px solid var(--border2);border-radius:12px;color:var(--navy);cursor:pointer;font-size:.8rem;font-family:"Plus Jakarta Sans",sans-serif;font-weight:500;transition:all .2s;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.abtn:hover{border-color:var(--teal);color:var(--teal)}
+.abtn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.abtn.primary:hover{background:#00b39d}
+
+/* END */
+#end-screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;padding:1.5rem;text-align:center;background:var(--bg)}
+.end-trophy{font-size:3.5rem;margin-bottom:.8rem;animation:bounce .6s ease}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.end-title{font-family:"Syne",sans-serif;font-size:clamp(1.6rem,5vw,2.2rem);font-weight:800;color:var(--navy);margin-bottom:.3rem}
+.end-sub{color:var(--text2);margin-bottom:1.2rem;font-size:.9rem}
+.chips{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:100px;font-size:.74rem;font-weight:600}
+.cg{background:#E8FBF4;color:#00875A}.cb{background:#EEF2FF;color:#3730A3}.co{background:#FFF7E6;color:#B45309}
+.fb-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.4rem;max-width:500px;width:100%;text-align:left;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+.fb-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-weight:700;margin-bottom:.9rem}
+.fb-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:.75rem;font-size:.85rem;color:var(--text2);line-height:1.55}
+.fi{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;margin-top:1px}
+.restart-btn{padding:.85rem 2.2rem;background:var(--navy);border:none;border-radius:14px;color:#fff;font-family:"Syne",sans-serif;font-weight:700;cursor:pointer;font-size:.95rem;transition:all .2s}
+.restart-btn:hover{background:#2d2d5e;transform:translateY(-2px)}
+
+@media(max-width:480px){
+  #setup-screen{justify-content:flex-start;padding-top:2.5rem}
+  .lang-grid{grid-template-columns:repeat(2,1fr)}
+  .jury-svg-el{width:56px;height:68px}
+  .transcript-area{max-height:180px}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup-screen">
+  <div class="badge"><span class="badge-dot"></span>Simulation officielle</div>
+  <h1 class="setup-title">Ton oral <span class="c1">brevet</span><br><span class="c2">DNB</span> en vrai</h1>
+  <p class="setup-sub">3 jurys IA · chrono 5 min · détection de langue · retour personnalisé</p>
+  <div class="setup-card">
+    <div class="field-group">
+      <label class="field-label">Ton prénom</label>
+      <input class="field-input" id="inp-prenom" type="text" placeholder="ex. Léa" autocomplete="off">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Langue principale</label>
+      <div class="lang-grid" id="lang-grid">
+        <button type="button" class="choice-btn selected" data-group="lang" data-val="fr"><span class="choice-emoji">🇫🇷</span>Français</button>
+        <button type="button" class="choice-btn" data-group="lang" data-val="en"><span class="choice-emoji">🇬🇧</span>English</button>
+        <button type="button" class="choice-btn" data-group="lang" data-val="de"><span class="choice-emoji">🇩🇪</span>Deutsch</button>
+        <button type="button" class="choice-btn" data-group="lang" data-val="es"><span class="choice-emoji">🇪🇸</span>Español</button>
+      </div>
+      <p class="hint">💡 Tu peux mélanger — la langue est détectée phrase par phrase.</p>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Sujet / projet</label>
+      <textarea class="field-input" id="inp-sujet" rows="3" placeholder="Décris ton projet en quelques mots…"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Parcours</label>
+      <div class="parcours-grid">
+        <button type="button" class="choice-btn" data-group="parcours" data-val="avenir"><span class="choice-emoji">🎯</span>Avenir</button>
+        <button type="button" class="choice-btn" data-group="parcours" data-val="citoyen"><span class="choice-emoji">🌍</span>Citoyen</button>
+        <button type="button" class="choice-btn" data-group="parcours" data-val="sante"><span class="choice-emoji">🌿</span>Santé</button>
+        <button type="button" class="choice-btn" data-group="parcours" data-val="artistique"><span class="choice-emoji">🎨</span>Artistique</button>
+      </div>
+    </div>
+    <button type="button" class="start-btn" id="start-btn" disabled>Commencer la simulation →</button>
+  </div>
+</div>
+
+<!-- ORAL -->
+<div id="oral-screen">
+  <div class="top-bar">
+    <div class="top-info">DNB Oral · <strong id="top-prenom"></strong><span class="lang-badge" id="top-lang"></span></div>
+    <div class="timer-ring">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle class="t-bg" cx="26" cy="26" r="22"/>
+        <circle class="t-prog" id="t-prog" cx="26" cy="26" r="22" stroke-dasharray="138.2" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-text" id="t-display">5:00</div>
+    </div>
+  </div>
+  <div class="phase-banner"><span id="phase-icon">🎤</span><span id="phase-text">Présentation libre</span></div>
+  <div class="detect-banner" id="detect-banner"><span>🌐</span><span id="detect-text"></span></div>
+  <div class="jury-row" id="jury-row"></div>
+  <div class="transcript-area" id="transcript"></div>
+  <div class="controls">
+    <div class="ctrl-top">
+      <button type="button" class="mic-btn" id="mic-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+        </svg>
+      </button>
+      <div class="mic-status">
+        <div class="mic-label" id="mic-label">Appuie pour parler</div>
+        <div class="mic-sub" id="mic-live"></div>
+      </div>
+    </div>
+    <div class="ctrl-bottom">
+      <button type="button" class="abtn primary" id="next-q-btn" style="display:none">❓ Question suivante</button>
+      <button type="button" class="abtn" id="end-btn">Terminer l'oral</button>
+    </div>
+  </div>
+</div>
+
+<!-- END -->
+<div id="end-screen">
+  <div class="end-trophy">🏆</div>
+  <div class="end-title">Simulation terminée !</div>
+  <div class="end-sub" id="end-sub"></div>
+  <div class="chips" id="end-chips"></div>
+  <div class="fb-card">
+    <div class="fb-title">Retour personnalisé du jury</div>
+    <div id="fb-list"><div style="color:var(--text3);font-size:.85rem;text-align:center;padding:1rem">Analyse en cours…</div></div>
+  </div>
+  <button type="button" class="restart-btn" id="restart-btn">↺ Recommencer</button>
+</div>
+
+<script>
+// ── STATE (déclaré EN PREMIER) ────────────────────────────────────────────
+let S = {
+  prenom:'', sujet:'', parcours:'', lang:'fr',
+  segLang:'fr',           // langue du dernier segment détecté
+  timerSec:300, timerInt:null,
+  phase:'presentation',   // presentation | questions
+  qCount:0, qMax:4,
+  recog:null, isRec:false, isSpeaking:false,
+  startTime:null, endDone:false,
+  log:[]                  // transcription complète
+};
+
+// ── JURY SVG ──────────────────────────────────────────────────────────────
+function jurorSVG(i) {
+  const d = [
+    {skin:'#FDBCB4',hair:'#3D2B1F',suit:'#1A3A6B',tie:'#FF6B6B',gl:false,style:'side'},
+    {skin:'#C68642',hair:'#1A0A00',suit:'#00897B',tie:'',gl:true,style:'long'},
+    {skin:'#DDA985',hair:'#5C3D11',suit:'#4A4A6A',tie:'#FFD93D',gl:false,style:'short',beard:true}
+  ][i];
+  let hair='';
+  if(d.style==='side') hair=`<ellipse cx="40" cy="22" rx="18" ry="15" fill="${d.hair}"/><rect x="22" y="20" width="7" height="12" rx="3" fill="${d.hair}"/>`;
+  else if(d.style==='long') hair=`<ellipse cx="40" cy="22" rx="17" ry="15" fill="${d.hair}"/><rect x="22" y="24" width="5" height="26" rx="2.5" fill="${d.hair}"/><rect x="53" y="24" width="5" height="26" rx="2.5" fill="${d.hair}"/>`;
+  else hair=`<ellipse cx="40" cy="22" rx="15" ry="13" fill="${d.hair}"/>`;
+  const beard = d.beard?`<ellipse cx="40" cy="52" rx="11" ry="6" fill="${d.hair}" opacity=".65"/>`:'';
+  const gl = d.gl?`<rect x="27" y="37" width="10" height="7" rx="3" fill="none" stroke="#333" stroke-width="1.5"/><rect x="43" y="37" width="10" height="7" rx="3" fill="none" stroke="#333" stroke-width="1.5"/><line x1="37" y1="40" x2="43" y2="40" stroke="#333" stroke-width="1.5"/>`:'';
+  const tie = d.tie?`<polygon points="40,65 37,72 40,82 43,72" fill="${d.tie}"/>`:'';
+  return `<svg class="jury-svg-el" viewBox="0 0 80 96" xmlns="http://www.w3.org/2000/svg">
+    ${hair}
+    <ellipse cx="40" cy="38" rx="14" ry="17" fill="${d.skin}"/>
+    <ellipse cx="35" cy="37" rx="2" ry="2.5" fill="#3D2B1F" opacity=".85"/>
+    <ellipse cx="45" cy="37" rx="2" ry="2.5" fill="#3D2B1F" opacity=".85"/>
+    ${gl}
+    <ellipse class="jmouth" cx="40" cy="51" rx="5" ry="2" fill="#C47A6A" opacity=".7"/>
+    ${beard}
+    <rect x="20" y="60" width="40" height="36" rx="8" fill="${d.suit}"/>
+    <rect x="32" y="60" width="16" height="36" fill="white" opacity=".9"/>
+    ${tie}
+    <ellipse cx="27" cy="62" rx="8" ry="10" fill="${d.suit}"/>
+    <ellipse cx="53" cy="62" rx="8" ry="10" fill="${d.suit}"/>
+  </svg>`;
+}
+
+const JURORS = [
+  {name:"M. Dupont",   role:"Principal du collège", color:"var(--j1c)", cls:"j0"},
+  {name:"Mme Lambert", role:"Prof de français",      color:"var(--j2c)", cls:"j1"},
+  {name:"M. Saadi",    role:"Élu municipal",         color:"var(--j3c)", cls:"j2"}
+];
+
+const LANGS = {
+  fr:{code:"fr-FR", label:"Français",
+    end:["merci de votre attention","j\'ai terminé","c\'est tout","merci beaucoup","fin de ma présentation","je vous remercie","je termine","merci de m\'avoir écouté","voilà pour ma présentation"]},
+  en:{code:"en-GB", label:"English",
+    end:["thank you for your attention","that\'s all","i have finished","thank you very much","that concludes","end of my presentation","i\'m done","thank you for listening"]},
+  de:{code:"de-DE", label:"Deutsch",
+    end:["danke für ihre aufmerksamkeit","ich bin fertig","vielen dank","das war meine präsentation","ich danke ihnen","das ist alles"]},
+  es:{code:"es-ES", label:"Español",
+    end:["gracias por su atención","he terminado","muchas gracias","fin de mi presentación","eso es todo","gracias a todos"]}
+};
+
+// Détection par mots caractéristiques (seuil 2)
+const PATTERNS = {
+  en:/(the|and|is|are|this|that|have|has|was|were|will|would|can|could|my|your|we|you|they|it|be|do|not|with|from|about|for|but|so|when|very|just|like|good|well|me|him|her|us|them|which|also|some|into|than|more|its|our|their|i am|i have|i will)/gi,
+  de:/(ich|das|die|der|und|ist|ein|eine|nicht|auch|mit|auf|für|von|zu|im|an|als|bei|nach|über|aber|oder|wenn|wie|was|wir|sie|er|mein|dein|sein|ihr|dem|den|des|hat|haben|wird|kann|sind|war)/gi,
+  es:/(el|la|los|las|un|una|es|son|está|yo|tú|él|ella|nosotros|mi|tu|su|pero|porque|cuando|cómo|qué|quién|también|muy|más|este|esta|para|con|sin|por|del|al|le|les|ser|estar|tiene|tengo)/gi
+};
+
+function detectSegLang(text) {
+  const t = text.toLowerCase();
+  let best='fr', bestN=1; // seuil min=2
+  for(const [l,p] of Object.entries(PATTERNS)){
+    const n=(t.match(new RegExp(p.source,'gi'))||[]).length;
+    if(n>bestN){bestN=n;best=l;}
+  }
+  return best;
+}
+
+function detectEnd(text) {
+  const t=text.toLowerCase();
+  for(const [k,cfg] of Object.entries(LANGS))
+    if(cfg.end.some(p=>t.includes(p))) return k;
+  return null;
+}
+
+// ── SETUP EVENTS ──────────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  // Boutons choix (langue + parcours) — délégation sur le document
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-group]');
+    if (!btn) return;
+    const group = btn.dataset.group;
+    const val = btn.dataset.val;
+    // Désélectionner les autres du même groupe
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    if(group==='lang') S.lang=val;
+    if(group==='parcours'){ S.parcours=val; checkStart(); }
+  });
+
+  document.getElementById('inp-prenom').addEventListener('input', checkStart);
+  document.getElementById('inp-sujet').addEventListener('input', checkStart);
+  document.getElementById('start-btn').addEventListener('click', startOral);
+  document.getElementById('mic-btn').addEventListener('click', toggleMic);
+  document.getElementById('next-q-btn').addEventListener('click', nextQuestion);
+  document.getElementById('end-btn').addEventListener('click', () => endOral());
+  document.getElementById('restart-btn').addEventListener('click', restart);
+});
+
+function checkStart() {
+  const ok = document.getElementById('inp-prenom').value.trim() &&
+             document.getElementById('inp-sujet').value.trim() &&
+             S.parcours;
+  document.getElementById('start-btn').disabled = !ok;
+}
+
+// ── START ─────────────────────────────────────────────────────────────────
+async function startOral() {
+  S.prenom = document.getElementById('inp-prenom').value.trim();
+  S.sujet  = document.getElementById('inp-sujet').value.trim();
+  S.segLang = S.lang;
+  S.startTime = Date.now();
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('oral-screen').style.display  = 'flex';
+  document.getElementById('top-prenom').textContent = S.prenom;
+  document.getElementById('top-lang').textContent   = LANGS[S.lang].label;
+  const ph={fr:"Présentation libre — parlez de votre projet",en:"Free presentation",de:"Freie Präsentation",es:"Presentación libre"};
+  document.getElementById('phase-text').textContent = ph[S.lang]||ph.fr;
+  renderJurors();
+  startTimer();
+  initRecog();
+  await sleep(500);
+  await jurySay(0, `Bonjour ${S.prenom}, bienvenue devant votre jury de brevet. Vous avez 5 minutes. Nous vous écoutons.`);
+}
+
+function renderJurors() {
+  document.getElementById('jury-row').innerHTML = JURORS.map((j,i)=>`
+    <div class="jury-card ${j.cls}" id="jc-${i}">
+      <div class="jury-avatar-wrap">
+        ${jurorSVG(i)}
+        <div class="speak-dot"></div>
+      </div>
+      <div class="jury-info">
+        <div class="jury-name">${j.name}</div>
+        <div class="jury-role">${j.role}</div>
+        <div class="jury-wave" id="jw-${i}" style="color:${j.color}">
+          <span style="background:currentColor"></span>
+          <span style="background:currentColor"></span>
+          <span style="background:currentColor"></span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function startTimer() {
+  S.timerInt = setInterval(()=>{
+    S.timerSec--;
+    const m=Math.floor(S.timerSec/60), s=S.timerSec%60;
+    document.getElementById('t-display').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+    const off=138.2*(1-S.timerSec/300);
+    const p=document.getElementById('t-prog');
+    p.style.strokeDashoffset=off;
+    p.style.stroke=S.timerSec<60?'var(--coral)':S.timerSec<120?'var(--sun)':'var(--teal)';
+    if(S.timerSec<=0){clearInterval(S.timerInt);if(!S.endDone){S.endDone=true;timeUp();}}
+    else if(S.timerSec===90&&S.phase==='presentation') goQuestions();
+  },1000);
+}
+
+async function timeUp(){
+  await jurySay(0,"Le temps est écoulé. Merci pour votre présentation.");
+  setTimeout(endOral,1500);
+}
+
+// ── SPEECH RECOG ──────────────────────────────────────────────────────────
+function initRecog(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('mic-label').textContent='Micro non supporté (utilise Chrome)';return;}
+  S.recog=new SR();
+  S.recog.lang=LANGS[S.lang].code;
+  S.recog.continuous=false;
+  S.recog.interimResults=true;
+  S.recog.onresult=e=>{
+    let it='',fin='';
+    for(let r of e.results){if(r.isFinal)fin+=r[0].transcript;else it+=r[0].transcript;}
+    document.getElementById('mic-live').textContent=it||fin;
+    if(fin){onFinal(fin);document.getElementById('mic-live').textContent='';}
+  };
+  S.recog.onend=()=>{
+    S.isRec=false;
+    document.getElementById('mic-btn').classList.remove('rec');
+    document.getElementById('mic-label').textContent='Appuie pour parler';
+    if(S.phase==='questions'&&S.qCount>0&&!S.isSpeaking) setTimeout(juryAck,900);
+  };
+  S.recog.onerror=()=>{
+    S.isRec=false;
+    document.getElementById('mic-btn').classList.remove('rec');
+    document.getElementById('mic-label').textContent='Appuie pour parler';
+  };
+}
+
+function onFinal(text){
+  // Détection langue segment
+  const sl=detectSegLang(text);
+  if(sl!=='fr'&&sl!==S.segLang){
+    S.segLang=sl;
+    const n={en:'anglais 🇬🇧',de:'allemand 🇩🇪',es:'espagnol 🇪🇸'};
+    document.getElementById('detect-text').textContent=`Passage en ${n[sl]} détecté`;
+    document.getElementById('detect-banner').classList.add('show');
+    if(S.recog) S.recog.lang=LANGS[sl].code;
+  }
+  // Détection fin d'oral
+  if(S.phase==='presentation'&&!S.endDone){
+    if(detectEnd(text)){
+      S.endDone=true;
+      addMsg('user',S.prenom,text,true);
+      presentationEnded();
+      return;
+    }
+  }
+  addMsg('user',S.prenom,text,true);
+}
+
+function toggleMic(){
+  if(!S.recog)return;
+  if(S.isRec){S.recog.stop();return;}
+  S.recog.lang=LANGS[S.segLang||S.lang].code;
+  try{
+    S.recog.start();
+    S.isRec=true;
+    document.getElementById('mic-btn').classList.add('rec');
+    document.getElementById('mic-label').textContent='Écoute en cours…';
+  }catch(e){}
+}
+
+// ── JURY PARLE ────────────────────────────────────────────────────────────
+async function jurySay(idx, text){
+  if(S.isSpeaking)return;
+  S.isSpeaking=true;
+  const card=document.getElementById(`jc-${idx}`);
+  const wave=document.getElementById(`jw-${idx}`);
+  card&&card.classList.add('speaking');
+  wave&&wave.classList.add('active');
+  addMsg(idx,JURORS[idx].name,text,false);
+  await speak(text,'fr-FR');
+  card&&card.classList.remove('speaking');
+  wave&&wave.classList.remove('active');
+  S.isSpeaking=false;
+}
+
+function speak(text,lang){
+  return new Promise(res=>{
+    if(!window.speechSynthesis){setTimeout(res,2000);return;}
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang||'fr-FR';u.rate=.92;
+    const vx=window.speechSynthesis.getVoices();
+    const v=vx.find(v=>v.lang.startsWith('fr'));
+    if(v)u.voice=v;
+    u.onend=res;u.onerror=res;
+    window.speechSynthesis.speak(u);
+  });
+}
+
+// ── TRANSITION PRÉSENTATION → QUESTIONS ──────────────────────────────────
+function goQuestions(){
+  if(S.phase==='questions')return;
+  S.phase='questions';
+  document.getElementById('phase-icon').textContent='❓';
+  document.getElementById('phase-text').textContent='Questions du jury';
+  document.getElementById('next-q-btn').style.display='block';
+}
+
+async function presentationEnded(){
+  goQuestions();
+  // Génère Q1 en parallèle de la phrase courte → enchaînement immédiat
+  const acks=["Merci.","Très bien.","Merci beaucoup."];
+  const ack=acks[Math.floor(Math.random()*acks.length)];
+  S.qCount++;
+  document.getElementById('next-q-btn').style.display='none';
+  const [q]=await Promise.all([
+    genQuestion(S.qCount,0),
+    jurySay(0,ack)
+  ]);
+  await jurySay(0,q);
+}
+
+async function nextQuestion(){
+  if(S.qCount>=S.qMax){
+    await jurySay(0,"Nous avons terminé nos questions. Merci beaucoup pour cet oral.");
+    setTimeout(endOral,2000);
+    return;
+  }
+  S.qCount++;
+  document.getElementById('next-q-btn').style.display='none';
+  const idx=(S.qCount-1)%3;
+  const q=await genQuestion(S.qCount,idx);
+  await jurySay(idx,q);
+}
+
+async function juryAck(){
+  if(S.isSpeaking||S.phase!=='questions')return;
+  const acks=["Merci pour votre réponse.","Intéressant, merci.","Très bien.","D\'accord, merci."];
+  const idx=S.qCount%3;
+  if(S.qCount<S.qMax){
+    document.getElementById('next-q-btn').style.display='block';
+    await jurySay(idx,acks[Math.floor(Math.random()*acks.length)]);
+  } else {
+    await jurySay(0,"Merci pour toutes vos réponses. Nous avons bien noté.");
+    setTimeout(endOral,2000);
+  }
+}
+
+async function genQuestion(num,idx){
+  const roles=["principal du collège","professeur de français","élu municipal"];
+  const parc={avenir:"Parcours Avenir",citoyen:"Parcours Citoyen",sante:"Parcours Santé",artistique:"Parcours Artistique"};
+  const lnote=S.segLang!=='fr'?` L\'élève a présenté des passages en ${({en:"anglais",de:"allemand",es:"espagnol"})[S.segLang]||S.segLang}.`:"";
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:140,
+        system:`Tu es ${roles[idx]} dans un jury d\'oral de brevet DNB. Pose UNE question courte (2-3 phrases) en français sur le projet. Sois bienveillant. Ne salue pas. Varie : compréhension, ressenti, difficultés, perspectives.${lnote}`,
+        messages:[{role:"user",content:`Élève: ${S.prenom}, projet: "${S.sujet}", parcours: ${parc[S.parcours]||S.parcours}. Question n°${num}/4 — différente des précédentes.`}]
+      })
+    });
+    const d=await r.json();
+    return d.content?.[0]?.text||fbQ(num);
+  }catch(e){return fbQ(num);}
+}
+
+function fbQ(n){
+  return ["Pourquoi avez-vous choisi ce sujet ?","Qu\'est-ce que ce projet vous a apporté ?","Quelles difficultés avez-vous rencontrées ?","Que changeriez-vous si vous refaisiez ce projet ?"][(n-1)%4];
+}
+
+// ── MESSAGES ──────────────────────────────────────────────────────────────
+function addMsg(idx,name,text,isUser){
+  if(!S.log)S.log=[];
+  S.log.push({who:isUser?'élève':JURORS[idx]?.name||name,text});
+  const area=document.getElementById('transcript');
+  const div=document.createElement('div');
+  div.className='msg'+(isUser?' user':'');
+  let av;
+  if(isUser){
+    av=`<div class="av" style="background:var(--navy);color:#fff">${(S.prenom[0]||'?').toUpperCase()}</div>`;
+  } else {
+    const bgs=['var(--j1bg)','var(--j2bg)','var(--j3bg)'];
+    const cs=['var(--j1c)','var(--j2c)','var(--j3c)'];
+    av=`<div class="av" style="background:${bgs[idx]};color:${cs[idx]}">${name.split(' ')[1]?.[0]||name[0]}</div>`;
+  }
+  const bc=isUser?'ububble':'jbubble';
+  const nc=isUser?'var(--text3)':JURORS[idx]?.color||'var(--text3)';
+  div.innerHTML=`${av}<div class="bwrap"><div class="msg-who" style="color:${nc}">${name}</div><div class="bubble ${bc}">${text}</div></div>`;
+  area.appendChild(div);
+  area.scrollTop=area.scrollHeight;
+}
+
+// ── END ───────────────────────────────────────────────────────────────────
+async function endOral(){
+  clearInterval(S.timerInt);
+  try{S.recog&&S.recog.stop();}catch(e){}
+  window.speechSynthesis&&window.speechSynthesis.cancel();
+  document.getElementById('oral-screen').style.display='none';
+  document.getElementById('end-screen').style.display='flex';
+  const el=Math.round((Date.now()-S.startTime)/1000);
+  document.getElementById('end-sub').textContent=`${S.prenom}, voici le retour de votre jury`;
+  const chips=[
+    `<div class="chip cg">⏱ ${Math.floor(el/60)}min ${el%60}s</div>`,
+    `<div class="chip cb">❓ ${S.qCount} question(s)</div>`
+  ];
+  if(S.segLang!=='fr'){const n={en:'Anglais 🇬🇧',de:'Allemand 🇩🇪',es:'Espagnol 🇪🇸'};chips.push(`<div class="chip co">${n[S.segLang]||''}</div>`);}
+  document.getElementById('end-chips').innerHTML=chips.join('');
+  const fb=await genFeedback(el);
+  const icons=['✅','💡','⭐'];
+  const bgs=['#E8FBF4','#FFFBEC','#EEF2FF'];
+  document.getElementById('fb-list').innerHTML=fb.map((f,i)=>
+    `<div class="fb-item"><div class="fi" style="background:${bgs[i]}">${icons[i]}</div><span>${f}</span></div>`
+  ).join('');
+}
+
+async function genFeedback(elapsed){
+  const transcript=(S.log||[]).map(e=>`[${e.who}]: ${e.text}`).join('\n')||'Aucune prise de parole.';
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:300,
+        system:"Tu es un jury de brevet DNB. Donne un retour HONNÊTE basé sur la transcription fournie. Si l\'élève a peu parlé, hésité, répondu vaguement ou pas terminé → dis-le avec bienveillance. Si c\'est bien → explique pourquoi concrètement. NE félicite JAMAIS de façon générique. 3 retours : 1 observation précise sur CE QUI S\'EST PASSÉ, 1 axe d\'amélioration concret, 1 conseil pratique actionnable. JSON uniquement : {\"feedbacks\":[\"...\",\"...\",\"...\"]}",
+        messages:[{role:"user",content:`Élève: ${S.prenom}\nSujet: "${S.sujet}"\nParcours: ${S.parcours}\nDurée: ${elapsed}s/300s\nNb questions répondues: ${S.qCount}\nA conclu son oral: ${S.endDone?'oui':'non (temps écoulé)'}\nLangues: fr${S.segLang!=='fr'?'+'+S.segLang:''}\n\nTranscription:\n${transcript}\n\nRetour honnête et précis basé sur cette transcription réelle.`}]
+      })
+    });
+    const d=await r.json();
+    const clean=(d.content?.[0]?.text||'').replace(/\`\`\`json|\`\`\`/g,'').trim();
+    return JSON.parse(clean).feedbacks;
+  }catch(e){
+    return ["Votre transcription montre que vous avez abordé le sujet, continuez à vous entraîner.",
+            "Essayez de structurer votre présentation en 3 parties : introduction, développement, conclusion.",
+            "Chronométrez-vous à la maison pour habituer votre débit aux 5 minutes imposées."];
+  }
+}
+
+// ── RESTART ───────────────────────────────────────────────────────────────
+function restart(){
+  clearInterval(S.timerInt);
+  window.speechSynthesis&&window.speechSynthesis.cancel();
+  S={prenom:'',sujet:'',parcours:'',lang:'fr',segLang:'fr',timerSec:300,timerInt:null,phase:'presentation',qCount:0,qMax:4,recog:null,isRec:false,isSpeaking:false,startTime:null,endDone:false,log:[]};
+  document.getElementById('end-screen').style.display='none';
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('start-btn').disabled=true;
+  document.getElementById('inp-prenom').value='';
+  document.getElementById('inp-sujet').value='';
+  document.querySelectorAll('.choice-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelector('[data-group="lang"][data-val="fr"]').classList.add('selected');
+  document.getElementById('transcript').innerHTML='';
+  document.getElementById('t-display').textContent='5:00';
+  document.getElementById('t-prog').style.strokeDashoffset=0;
+  document.getElementById('t-prog').style.stroke='var(--teal)';
+  document.getElementById('detect-banner').classList.remove('show');
+  document.getElementById('next-q-btn').style.display='none';
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+window.speechSynthesis&&window.speechSynthesis.getVoices();
+window.speechSynthesis&&window.speechSynthesis.addEventListener('voiceschanged',()=>window.speechSynthesis.getVoices());
+</script>
+</body>
+</html>
